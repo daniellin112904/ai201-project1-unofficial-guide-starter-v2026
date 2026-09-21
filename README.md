@@ -1,19 +1,6 @@
 # The Unofficial Guide
 
-<!-- Replace this line with your name and which corpus you picked. -->
-
-> **This file is your submission.** Fill it in as you go — most sections get
-> written during the milestone that produces them, not at the end.
->
-> How the starter works, and every command you'll need, is in `RUNNING.md`.
-> Leave that file alone.
->
-> **Paste everything as text.** No screenshots, no video. A typed table gets
-> full credit; a picture of the same table gets none.
->
-> Delete these instruction blocks as you replace them. The `<!-- -->` comments
-> are notes to you and don't show up when the page renders — you can leave them
-> or remove them.
+**Daniel Lin** · Corpus: `campus_life` (88 short student posts about campus life)
 
 ---
 
@@ -31,6 +18,12 @@
 
 **Chunk size:**
 **Overlap:**
+
+### Starting point (Milestone 1)
+The starter chunker (`chunker.py::fallback_split`) turned 88 documents into 88 chunks,
+averaging 317 characters (shortest 178, longest 549). Its 800 character window is
+longer than every post, so it never split anything. Reading the posts, each one is
+2 to 3 sentences and the useful fact usually sits in a single sentence.
 
 <!-- What about YOUR documents made you pick these numbers? Short posts and
      long sectioned guides don't want the same chunking, and "800 seemed
