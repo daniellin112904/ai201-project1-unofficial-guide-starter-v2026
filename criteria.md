@@ -23,8 +23,11 @@ For at least 4 of my 5 test questions, the retrieved chunks include one that
 contains the answer.
 
 **Why this target:**
-<!-- e.g. "One of my questions is about a topic only two documents mention, so
-     I expect that one to be hard." -->
+I expect my question about the Aldridge Hall wash price to be the hardest, since
+there are 7 nearly identical `_laundry.txt` documents that differ only in their
+prices, so retrieval could pull the wrong hall. My other four questions each ask
+about a fact in a short post on a single topic, so if more than one question
+failed, it would mean retrieval is missing even the easy cases.
 
 ---
 
@@ -33,8 +36,10 @@ contains the answer.
 Every answer the system produces names at least one source document.
 
 **Why this target:**
-<!-- Why all five and not four? What about your setup makes that achievable —
-     or what would have to go wrong for it not to be? -->
+Every chunk already carries its filename, and the grounding instruction tells the
+model to name its source. A missing source would mean the model ignored its
+instructions, and an answer without a source can't be checked, so I want this to
+hold for all 5 answers rather than 4 of 5.
 
 ---
 
@@ -50,47 +55,42 @@ in at least 4 of 5 tries.
      just keep five of them, or the "4 of 5" above has nothing to be 4 of. -->
 
 **Why this target:**
-<!-- What did your distances look like when you set the cutoff in Milestone 4?
-     Was there a clean gap, or did the two groups overlap? -->
+Most of the out-of-scope questions are clearly unrelated to campus life, but the question about writing a for loop in Rust shares programming vocabulary with the CS
+course posts, so it could land under the cutoff. I allow one miss for that
+possibility, but more than one would mean the gate is letting unrelated questions
+through.
 
 ---
 
 ## 4. Something about your chunks
 
-<!-- YOU WRITE THIS ONE.
-
-     How would you know if your chunks were the right size? Name something
-     countable or observable.
-
-     Examples of the right shape — don't copy these, they should come from
-     what you actually saw in Milestone 3:
-       - "At least 4 of 5 sampled chunks read as a complete thought, with no
-          sentence cut in half at either end."
-       - "No chunk is shorter than 200 characters, since anything below that
-          in my corpus turned out to be a heading with no content under it." -->
+When I inspect 20 chunks, at least 18 should focus on one clear topic and not combine unrelated topics.
 
 
 
 **Why this target:**
-
+I chose this because some posts in the corpus contain multiple unrelated topics, which could make it harder for retrieval to identify the information needed for a question. I would allow 2 chunks to fail, but most chunks should stay focused on one topic.
 
 
 ---
 
 ## 5. Your choice
 
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. It could be about
-     speed, about refusals, about a particular kind of question your corpus
-     handles badly, about source attribution being correct rather than merely
-     present — anything, as long as it names a number or an observable
-     outcome. -->
+For at least 4 of my 5 test questions, the final answer contains the `expects`
+phrase listed for that question in `questions.py`.
 
 
 
 **Why this target:**
-
+This is different from criterion 1: criterion 1 checks that the retrieved chunk
+contains the answer, while this checks that the model picks the right detail out
+of it. The laundry post lists both a wash and a dry price, and the printing post
+has several numbers in the same few sentences, so a chunk can be correct while the
+answer is wrong. Getting a confident answer with the wrong price is the mistake
+that would bother me most as a student. I allow one miss because a correct answer
+can be worded differently from my `expects` phrase, like "week two" instead of
+"second week," but more than one would mean the model is regularly picking the
+wrong detail.
 
 
 ---
