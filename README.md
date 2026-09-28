@@ -8,11 +8,15 @@
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This is a retrieval-augmented question answering system over `campus_life`, a
+corpus of 88 short posts about student life at a fictional university: dining
+halls, dorms, course workloads, and administrative deadlines. You ask a plain
+question like "how much does a wash cost at Aldridge Hall?" and it retrieves the
+closest chunks from those posts, answers from them only, and names the file the
+answer came from. If nothing retrieved is close enough to the question, it
+refuses instead of guessing, so asking about something the corpus doesn't cover
+gets you an honest "I don't have enough information" rather than an invented
+answer.
 
 ## Chunking Strategy
 
@@ -194,18 +198,29 @@ HIST 118 chunks, presumably on shared history and geography vocabulary.
 
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+**1. Deciding whether to merge short chunks.** I was designing my chunker and
+wanted short paragraphs merged into their neighbours so I wouldn't end up with
+fragments. I asked Claude how to set the minimum length and proposed taking a
+percentage of the shortest paragraph in each file. It pointed out that at any
+percentage below 100, the shortest paragraph is by definition above the minimum,
+so the rule could never fire in any file. It suggested I print the actual length
+distribution instead of guessing. I ran that over all 183 body paragraphs and
+found the shortest ones were the most useful pieces in the corpus: single facts
+like course workload hours, exam formats, and dining hall times. One of them, at
+69 characters, is the answer to one of my own test questions. I dropped the
+minimum entirely rather than implementing what I had originally planned.
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
-
-**1.**
-
-**2.**
+**2. Writing my test questions.** I drafted six questions from documents I had
+read and asked Claude to tighten the wording and the `expects` phrases. Two
+problems came back that I hadn't seen. My colour printing question expected the
+answer 75, which I had worked out myself as 600 divided by 8; no chunk in the
+corpus contains that number, so the question would have been testing arithmetic
+rather than retrieval. My CS 340 workload question had two separate facts in one
+`expects` field, and my version of the answer disagreed with what the document
+actually says. I cut both questions, then opened each source file and copied the
+`expects` phrases straight from the text, shortening them so they would still
+match if the model reworded the answer. "120 pages" instead of "about 120 pages
+per week", for example.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
