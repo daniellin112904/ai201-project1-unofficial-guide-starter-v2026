@@ -16,8 +16,15 @@
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** not a fixed number. One body paragraph per chunk, with the
+document's title line prepended. 88 documents become 183 chunks, averaging
+167 characters (shortest 63, longest 397).
+
+**Overlap:** none. I split on paragraph breaks rather than a character count,
+so no sentence gets cut in half and there is nothing for overlap to repair.
+Every fact I tested for sits complete inside one paragraph. With paragraphs
+this short, overlapping would make neighbouring chunks near duplicates of each
+other and waste retrieval slots.
 
 ### Starting point (Milestone 1)
 The starter chunker (`chunker.py::fallback_split`) turned 88 documents into 88 chunks,
@@ -25,51 +32,101 @@ averaging 317 characters (shortest 178, longest 549). Its 800 character window i
 longer than every post, so it never split anything. Reading the posts, each one is
 2 to 3 sentences and the useful fact usually sits in a single sentence.
 
-<!-- What about YOUR documents made you pick these numbers? Short posts and
-     long sectioned guides don't want the same chunking, and "800 seemed
-     reasonable" earns nothing. Point at something you noticed when you read
-     the documents in Milestone 1.
+### What I changed and why
+The starter's 800 character window never split anything, since no post in
+campus_life reaches 800. That left 20 of the 88 posts covering more than one
+topic in a single chunk, such as `course_cs_340.txt`, which holds class format,
+exams, workload and advice together.
 
-     If you changed your mind partway through, say so and say why. That's worth
-     more than pretending you got it right first time.
+I split on paragraph breaks instead, because the authors already separated
+their topics that way. Each chunk gets the document's title line prepended:
+the seven housing posts have nearly identical laundry paragraphs that differ
+only in price, and without the title a chunk reading "Laundry costs $1.75
+wash" contains no mention of Aldridge Hall for retrieval to match on.
 
-     Milestone 3. -->
+I planned to merge paragraphs below a minimum length into their neighbours,
+but printed the length of all 183 body paragraphs before writing the code. The
+shortest ones turned out to be the corpus at its most useful: single facts like
+course workload hours, exam formats, and dining hall times. One of them, at 69
+characters, is the answer to one of my own test questions. Any minimum above 70
+would have buried it inside a chunk about something else, so I dropped the
+minimum entirely and kept every paragraph as its own chunk.
+
+This does not split posts where two topics share one paragraph, such as
+`admin_add_drop_deadline.txt`, which states the add and drop deadlines in
+consecutive sentences. That is a known limitation.
 
 ## Sample Chunks
 
-<!-- Five chunks, pasted as text. Label each one and name the file it came from
-     AND the function that produced it — the grader checks your code against
-     what you claim here.
-
-     `python app.py chunks -n 5` prints all three for you. Copy them straight
-     across.
-
-     Milestone 3. -->
-
-**Chunk 1** — source: `` — produced by: ``
+**Chunk 1** — source: `course_hist_118.txt#1` — produced by: `chunker.py::split_documents`
 
 ```
+HIST 118 Modern World History
+
+Expect a lot of reading, about 120 pages a week, but no problem sets.
 ```
 
-**Chunk 2** — source: `` — produced by: ``
+A single fact standing on its own. Under the starter's chunker this sentence was
+buried in a chunk that also covered seminar format, assessment and essay advice.
+It is the answer to one of my five test questions.
+
+**Chunk 2** — source: `housing_aldridge_hall_noise.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+Noise levels in Aldridge Hall
+
+Asked about this a lot so writing it down. Quiet floors on 3 and 4 are genuinely enforced.
 ```
 
-**Chunk 3** — source: `` — produced by: ``
+The seven housing noise posts share the sentence "Asked about this a lot so writing
+it down" verbatim. Without the prepended title, nothing in this chunk would
+identify Aldridge Hall for retrieval to match on.
+
+**Chunk 3** — source: `course_phys_130_workload.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+Workload for PHYS 130 Mechanics
+
+People keep asking so: 7 hours a week, plus 3 on lab weeks. That's real time, not optimistic time.
 ```
 
-**Chunk 4** — source: `` — produced by: ``
+One of the short paragraphs I had planned to merge into a neighbour before looking
+at the data. On its own it answers a workload question directly.
+
+**Chunk 4** — source: `admin_add_drop_deadline.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but adrop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
 ```
 
-**Chunk 5** — source: `` — produced by: ``
+A chunk my strategy does not fix. The add deadline and the drop deadline are two
+separate questions stated in consecutive sentences of one paragraph, so paragraph
+splitting leaves them together.
+
+**Chunk 5** — source: `housing_tamsin_court.txt#3` — produced by: `chunker.py::split_documents`
 
 ```
+Tamsin Court — what it's actually like
+
+Laundry costs in-unit washer-dryer. On noise: quiet, structurally — concrete floors between units.
 ```
+
+The same limitation reaching a laundry paragraph. Seven housing posts pair laundry
+cost and noise level in one paragraph, which is the shape my Aldridge wash-price
+test question has to retrieve through.
+
+### Criterion 4 check
+
+Of the 20 chunks printed by `python app.py chunks -n 20`, 18 cover only one topic
+under a strict reading, which meets my target of 18 of 20. The two that fail are
+`admin_add_drop_deadline.txt#0` and `housing_tamsin_court.txt#3`, both paragraphs
+where the author put two separate facts in consecutive sentences. Three more
+(`admin_parking_permits.txt#0`, `course_biol_160.txt#0`, `dining_halden_hall.txt#0`)
+are borderline: each holds several facts a student might ask about separately. If
+those count as failures the result is 15 of 20 and my target is missed. All five
+fail for the same reason, which is the limitation I noted above.
 
 ## Sample Answer
 

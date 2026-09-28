@@ -82,22 +82,49 @@ def fallback_split(
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Split each document into one chunk per body paragraph, with the document's
+    title line prepended to every chunk.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    The campus_life posts are short and already separate their topics with
+    blank lines, so paragraph breaks are real boundaries the author chose.
+    Splitting there keeps each fact whole without cutting sentences.
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
+    The title is prepended because several posts in a family are nearly
+    identical apart from one number — the seven housing laundry paragraphs
+    differ only in price — and without the title a chunk has nothing in it
+    for retrieval to tell those halls apart.
 
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    No minimum chunk length: the shortest paragraphs in this corpus are its
+    single-fact ones (workload hours, exam formats, dining hall times), so
+    merging them would bury the exact facts questions ask about.
     """
-    return fallback_split(documents)
+    chunks: list[Chunk] = []
+
+    for doc in documents:
+        parts = [p.strip() for p in doc.text.split("\n\n")]
+        parts = [p for p in parts if p]
+
+        if not parts:
+            continue
+
+        title = parts[0]
+        body = parts[1:]
+
+        # A document with no body paragraphs is still worth indexing on its own.
+        if not body:
+            body = [title]
+
+        for index, paragraph in enumerate(body):
+            chunks.append(
+                Chunk(
+                    text=f"{title}\n\n{paragraph}",
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
