@@ -130,30 +130,67 @@ fail for the same reason, which is the limitation I noted above.
 
 ## Sample Answer
 
-<!-- One complete question and answer, pasted as text, with the source line
-     visible. Milestone 4. -->
-
-**Question:**
+**Question:** How much does a wash cost at Aldridge Hall?
 
 **Answer:**
 
 ```
+  (best distance 0.262, cutoff 0.6)
+
+A wash costs $1.75 at Aldridge Hall.
+
+Source: housing_aldridge_hall.txt (also found in housing_aldridge_hall_laundry.txt)
+
+Sources retrieved: housing_aldridge_hall.txt, housing_aldridge_hall_laundry.txt, housing_innisfree_hall.txt
 ```
 
-**My relevance cutoff:**
+**Top-k:** 3, lowered from the starter's 5. The correct chunk came back at rank 1
+for all five of my test questions, and for the printing question ranks 2 to 5 sat
+at 0.68 or worse, so the extra slots were adding unrelated material rather than
+context. Lowering top-k limits how many chunks reach the model, not how relevant
+they are: even at 3, the printing question still passes two chunks at roughly 0.68
+and 0.70.
 
-<!-- The number you set in config.py, and how you got there.
+**Grounding instruction:** I read `GROUNDING_INSTRUCTION` in `generate.py` with
+`--show-prompt` and left it unchanged. It already restricts the model to the
+supplied documents, tells it to refuse when they don't cover the question, and
+requires it to name the file. It says nothing about choosing between near-identical
+facts, which is the live risk in this corpus: the three chunks retrieved for the
+question above contain six laundry prices across three halls, four of them $1.75.
+The model picked correctly here, so I left the instruction alone rather than adding
+a rule I had no evidence was needed. If criterion 5 misses in unit 2, this is the
+first place I would look.
 
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
+**My relevance cutoff:** 0.6, unchanged from the starter's default.
 
-     Milestone 4. -->
+I ran all five of my test questions and all five OUT_OF_SCOPE questions through
+`python app.py retrieve` and recorded the best distance for each. The two groups
+are far apart: everything my corpus covers landed between 0.262 and 0.329, and
+everything it doesn't landed between 0.787 and 0.923. The gap between them is
+about 0.46 wide, so 0.6 sits comfortably in the middle and classified all ten
+questions correctly. I considered tightening it to around 0.45 for extra margin,
+but my in-corpus questions all sat under 0.33 and nothing in the data suggested
+0.6 was too loose.
+
+In `criteria.md` I predicted the Rust and ibuprofen questions would come closest
+to the cutoff, because one shares programming vocabulary with my CS course posts
+and the other is about health, which `health_center.txt` covers. Both were wrong:
+they landed at 0.860 and 0.849, among the furthest of the five. The closest
+out-of-corpus question was the capital of Mongolia at 0.787, which retrieved
+HIST 118 chunks, presumably on shared history and geography vocabulary.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| How much does a wash cost at Aldridge Hall? | Yes | 0.262 |
+| What time does the North Kitchen close on weekdays? | Yes | 0.269 |
+| How many pages of reading per week does HIST 118 assign? | Yes | 0.292 |
+| How much more does colour printing cost than black and white? | Yes | 0.294 |
+| What is the deadline to add a course? | Yes | 0.329 |
+| What is the capital of Mongolia? | No | 0.787 |
+| Who won the 1994 World Cup? | No | 0.847 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.849 |
+| How do I write a for loop in Rust? | No | 0.860 |
+| How do I change the oil in a diesel engine? | No | 0.923 |
 
 ## How I Used AI
 
