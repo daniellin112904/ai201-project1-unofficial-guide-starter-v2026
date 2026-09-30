@@ -22,6 +22,7 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
@@ -82,21 +83,20 @@ def fallback_split(
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split each document into one chunk per body paragraph, with the document's
-    title line prepended to every chunk.
+    One chunk per body paragraph, with the document's title line prepended.
+    Paragraphs longer than config.SENTENCE_SPLIT_ABOVE are split further at
+    sentence boundaries.
 
-    The campus_life posts are short and already separate their topics with
-    blank lines, so paragraph breaks are real boundaries the author chose.
-    Splitting there keeps each fact whole without cutting sentences.
+    The campus_life posts separate their topics with blank lines, so paragraph
+    breaks are boundaries the author chose. The title is prepended because
+    several posts in a family are nearly identical apart from one number, and
+    without it a chunk has nothing for retrieval to tell them apart.
 
-    The title is prepended because several posts in a family are nearly
-    identical apart from one number — the seven housing laundry paragraphs
-    differ only in price — and without the title a chunk has nothing in it
-    for retrieval to tell those halls apart.
-
-    No minimum chunk length: the shortest paragraphs in this corpus are its
-    single-fact ones (workload hours, exam formats, dining hall times), so
-    merging them would bury the exact facts questions ask about.
+    Unit 2 added the length threshold. Testing criterion 4 showed three chunks
+    holding two or three separately-askable facts each, because those authors
+    wrote consecutive sentences instead of separate paragraphs. Two of the
+    three were the longest paragraphs in the sample, so splitting long ones at
+    sentence boundaries separates them while leaving short paragraphs whole.
     """
     chunks: list[Chunk] = []
 
@@ -110,14 +110,21 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
         title = parts[0]
         body = parts[1:]
 
-        # A document with no body paragraphs is still worth indexing on its own.
         if not body:
             body = [title]
 
-        for index, paragraph in enumerate(body):
+        pieces: list[str] = []
+        for paragraph in body:
+            if len(paragraph) > config.SENTENCE_SPLIT_ABOVE:
+                sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+                pieces.extend(s.strip() for s in sentences if s.strip())
+            else:
+                pieces.append(paragraph)
+
+        for index, piece in enumerate(pieces):
             chunks.append(
                 Chunk(
-                    text=f"{title}\n\n{paragraph}",
+                    text=f"{title}\n\n{piece}",
                     source=doc.source,
                     index=index,
                     produced_by="chunker.py::split_documents",

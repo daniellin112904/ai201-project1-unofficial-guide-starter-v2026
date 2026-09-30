@@ -30,6 +30,9 @@ CORPUS = os.getenv("AI201_CORPUS", "campus_life")
 CHUNK_SIZE = 800        # characters per chunk
 CHUNK_OVERLAP = 120     # characters shared between neighbouring chunks
 
+# Milestone 4 (unit 2): paragraphs longer than this get split at sentence
+# boundaries. Below it, a paragraph stays whole.
+SENTENCE_SPLIT_ABOVE = 260
 
 # ─── Retrieval (Milestone 4) ─────────────────────────────────────────────────
 

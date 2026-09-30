@@ -245,13 +245,20 @@ Full output committed in `results/run_2026-09-29_2318_before.md`.
 | 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 | 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
 | 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
-| 4. Chunks cover one topic | 18 of 20 | 17/20 | 17/20 | 17/20 | MISSED |
+| 4. Chunks are at most two sentences (revised) | 90% | 77.0% | 77.0% | 77.0% | MISSED |
 | 5. Answer contains the `expects` phrase | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
 Criteria 3 and 4 show the same number in all three columns. Criterion 3 is a
 single deterministic pass of the gate, as `run_eval.py` explains. Criterion 4
-is measured with `python app.py chunks -n 20`, which reads the stored chunks
-and does not vary between runs either.
+does not vary between runs either, since it reads the stored chunks.
+
+Criterion 4 is scored here against the revised version of the criterion, for the
+reason set out under The Improvement below. The figure is 141 of 183 chunks, and
+it comes from running the same measurement with `SENTENCE_SPLIT_ABOVE` disabled,
+which reproduces the unit 1 chunker exactly. My original scoring of the unit 1
+criterion, 17 of 20 by hand, is kept in the Verdicts table and in the criterion 4
+evidence below, since that is the scoring that showed me the criterion could not
+be applied consistently.
 
 ### Criterion 1 — retrieved chunk contains the answer
 
@@ -363,54 +370,109 @@ run 3: A wash at Aldridge Hall costs $1.75.
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+**Criterion 4 — chunks cover one topic (17 of 20, target 18 of 20)**
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+The failure happened at the **chunking** stage. `chunker.py::split_documents`
+cuts only at blank lines between paragraphs, but in
+`admin_add_drop_deadline.txt`, `admin_parking_permits.txt` and
+`housing_tamsin_court.txt` the separate facts are divided by sentence
+boundaries inside a single paragraph, so the splitter had nothing to cut on and
+each chunk kept two or three topics.
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
+All three failures are the same problem, not three different ones: the authors
+of these posts wrote several separately-askable facts as consecutive sentences
+rather than as separate paragraphs, and my splitting rule only sees the blank
+lines. I named this limitation in unit 1 before running any test, using
+`admin_add_drop_deadline.txt` as the example, so the test confirmed a weakness
+I already expected rather than finding a new one.
 
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
-
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
-
-     Milestone 3. -->
+Criteria 1, 2, 3 and 5 were all met, so there is nothing to diagnose for them.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** I added `SENTENCE_SPLIT_ABOVE = 260` to `config.py` and a
+step to `chunker.py::split_documents` that splits any body paragraph longer
+than that at sentence boundaries. Paragraphs at or below 260 characters stay
+whole. The corpus went from 183 chunks to 202, and the longest chunk fell from
+397 characters to 283.
 
-**Why I picked it:**
+**Why I picked it:** My diagnosis said the chunking stage kept two or three
+separately-askable facts in one chunk because the authors wrote them as
+consecutive sentences rather than separate paragraphs, and my splitter only cut
+at blank lines. Before writing any code I measured the paragraphs involved: two
+of the three failures were the longest paragraphs in the sample, at 274 and 285
+characters, while the longest paragraph I had counted as passing was 252. A
+threshold of 260 sat in that gap, so it would split the two long failures and
+leave everything else alone.
 
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+I knew going in that this could not fix all three. The Tamsin Court laundry
+paragraph that failed was only 98 characters, shorter than four paragraphs I
+had counted as passing, so no length threshold could reach it without splitting
+those too. I chose the length rule anyway because it was one small change I
+could measure cleanly, rather than a sentence-splitting rule with a merge step
+that would have reversed a decision I made in unit 1 and changed several things
+at once.
+
+### Criterion 4 was revised, not lowered
+
+Scoring criterion 4 for this unit showed I could not apply it the same way
+twice. In unit 1 I counted `admin_parking_permits.txt#0` as one topic; in unit
+2 I counted it as two. In a single sitting I failed
+`housing_tamsin_court.txt#3` for pairing laundry cost with noise level while
+passing `dining_north_kitchen.txt#1` for pairing opening hours with price,
+which is the same shape of chunk. "One clear topic" turned out to measure how
+broadly I was defining a topic that day rather than anything about the chunks.
+
+I replaced it with a mechanical version: at least 90% of all chunks contain no
+more than two sentences of body text. Sentence count is a proxy for the same
+thing and anyone can check it. 90% preserves the strictness of the original 18
+of 20, and measuring every chunk rather than a sample of 20 removes a second
+problem: `python app.py chunks -n 20` returned a different 20 chunks once the
+chunk count changed, so I was not scoring the same chunks before and after. The
+original line stays in `criteria.md` with the revision underneath it.
+
+Both run logs below score criterion 4 against the revised version, measured over
+every chunk. The before figure comes from running the same measurement with the
+threshold disabled, which reproduces the unit 1 chunker exactly.
 
 ### Run Log — After
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+Produced by `run_eval.py::main`, three runs per question with caching off.
+Full output committed in `results/run_2026-09-30_0124_after.md`.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Chunks are at most two sentences (revised) | 90% | 82.7% | 82.7% | 82.7% | MISSED |
+| 5. Answer contains the `expects` phrase | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
 **Did it help?**
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
+Yes, but not enough to meet the target. Criterion 4 went from 141 of 183 chunks
+(77.0%) to 167 of 202 (82.7%), an improvement of 5.7 points against a target of
+90%, so it is still a MISS. The specific chunks that motivated the change were
+fixed: `admin_add_drop_deadline.txt#0` is now just the add deadline, and the
+parking permit paragraph is split into its three separate facts.
 
-     Milestone 4. -->
+The 35 chunks that still fail show why the length rule could only go so far. The
+shortest of them is 143 characters, barely half my threshold, and the twelve
+shortest are almost all opening paragraphs from housing and course posts. These
+pack three or four short sentences into well under 260 characters, so a length
+threshold can never reach them. Length was a proxy for "this paragraph holds
+several facts", and in this corpus that proxy holds for long paragraphs and
+fails for short dense ones.
+
+Two things improved that criterion 4 does not capture. The add-course question's
+best distance fell from 0.329 to 0.188, the largest change of any question,
+because the chunk it matches went from three sentences covering both deadlines
+and a complaint about the registrar's website down to the one sentence that
+answers it. Its retrieved sources also tightened: before the change the three
+slots held `admin_add_drop_deadline.txt`, `admin_pass_fail_option.txt` and
+`advising_registration.txt`, and after it two of the three come from the
+add/drop post itself. No other question's distance moved, because no other
+question's source document had a paragraph over 260 characters.
 
 ## What's Still Broken
 

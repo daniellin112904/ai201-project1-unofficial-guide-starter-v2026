@@ -71,6 +71,21 @@ When I inspect 20 chunks, at least 18 should focus on one clear topic and not co
 **Why this target:**
 I chose this because some posts in the corpus contain multiple unrelated topics, which could make it harder for retrieval to identify the information needed for a question. I would allow 2 chunks to fail, but most chunks should stay focused on one topic.
 
+> **Revised in unit 2:** At least 90% of all chunks contain no more than two
+> sentences of body text.
+>
+> **Why revised:** I could not apply the original the same way twice. I scored
+> `admin_parking_permits.txt#0` as one topic in unit 1 and as two in unit 2,
+> and in the same sitting I failed `housing_tamsin_court.txt#3` for pairing
+> laundry and noise while passing `dining_north_kitchen.txt#1` for pairing
+> hours and price, which is the same shape. "One clear topic" turned out to
+> depend on how broadly I defined a topic, so the criterion was measuring my
+> judgment on the day rather than the chunks. Sentence count is a proxy for
+> the same thing and anyone can check it. 90% keeps the strictness of the
+> original 18 of 20, and measuring every chunk instead of a sample of 20
+> removes the second problem I hit: the sample changed once the chunk count
+> changed, so I was not scoring the same chunks before and after.
+
 
 ---
 
