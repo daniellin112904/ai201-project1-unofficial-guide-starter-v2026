@@ -237,46 +237,129 @@ per week", for example.
 
 ## Run Log — Before
 
-<!-- Your five criteria, three runs each. `python run_eval.py --label before`
-     runs the questions, puts the OUT_OF_SCOPE ones through the gate, and
-     writes it all into results/ for you. Targets come from criteria.md; the
-     verdict column is your call.
-
-     Criterion 3 is measured in one deterministic pass rather than three, so
-     the same number goes in all three run columns. That's correct, not lazy.
-
-     Milestone 1. -->
+Produced by `run_eval.py::main`, three runs per question with caching off.
+Full output committed in `results/run_2026-09-29_2318_before.md`.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Chunks cover one topic | 18 of 20 | 17/20 | 17/20 | 17/20 | MISSED |
+| 5. Answer contains the `expects` phrase | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+Criteria 3 and 4 show the same number in all three columns. Criterion 3 is a
+single deterministic pass of the gate, as `run_eval.py` explains. Criterion 4
+is measured with `python app.py chunks -n 20`, which reads the stored chunks
+and does not vary between runs either.
+
+### Criterion 1 — retrieved chunk contains the answer
+
+Retrieval is deterministic, so the same chunks came back on all three runs. For
+each question the file holding the answer was among the retrieved sources, from
+`store.py::search` over chunks made by `chunker.py::split_documents`:
+
+```
+What is the deadline to add a course?
+  Sources retrieved: admin_add_drop_deadline.txt, admin_pass_fail_option.txt, advising_registration.txt
+
+What time does the North Kitchen close on weekdays?
+  Sources retrieved: dining_north_kitchen.txt, dining_north_kitchen_followup.txt
+
+How much does a wash cost at Aldridge Hall?
+  Sources retrieved: housing_aldridge_hall.txt, housing_aldridge_hall_laundry.txt, housing_innisfree_hall.txt
+
+How many pages of reading per week does HIST 118 assign?
+  Sources retrieved: course_hist_118.txt, course_hist_118_workload.txt
+
+How much more does colour printing cost than black and white?
+  Sources retrieved: admin_printing_quota.txt, housing_calder_annexe.txt, money_textbooks.txt
+```
+
+### Criterion 2 — every answer names a source
+
+All fifteen answers named a file. Produced by `generate.py`. Run 1, all five
+questions:
+
+```
+You can add a course through the end of the second week (admin_add_drop_deadline.txt).
+
+North Kitchen closes at 7:00pm on weekdays, according to *dining_north_kitchen.txt*.
+
+A wash at Aldridge Hall costs $1.75.
+
+Source: housing_aldridge_hall_laundry.txt (also mentioned in housing_aldridge_hall.txt)
+
+HIST 118 assigns about 120 pages of reading per week.
+
+Source: course_hist_118.txt (also mentioned in course_hist_118_workload.txt)
+
+Colour printing costs eight times as much per page as black-and-white printing (admin_printing_quota.txt).
+```
+
+### Criterion 3 — the gate on out-of-corpus questions
+
+Produced by `run_eval.py::check_out_of_scope`, cutoff 0.6. Refused 5 of 5:
+
+```
+refused  (best distance 0.787)  What is the capital of Mongolia?
+refused  (best distance 0.923)  How do I change the oil in a diesel engine?
+refused  (best distance 0.847)  Who won the 1994 World Cup?
+refused  (best distance 0.849)  What is the recommended dosage of ibuprofen for a headache?
+refused  (best distance 0.860)  How do I write a for loop in Rust?
+```
+
+### Criterion 4 — chunks cover one topic
+
+Measured with `python app.py chunks -n 20`, chunks from
+`chunker.py::split_documents`. Three of the twenty combine facts a student
+would ask about separately:
+
+```
+Chunk 1  |  source: admin_add_drop_deadline.txt#0
+
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
+```
+
+```
+Chunk 2  |  source: admin_parking_permits.txt#0
+
+On the parking permits
+
+Student permits for the west lots go on sale in August and sell out in about three days. The east lot never sells out because it's a 12-minute walk. There is no waitlist — people who miss the window park on Verrill Street and walk in, which is legal but unmarked and confuses everyone.
+```
+
+```
+Chunk 19  |  source: housing_tamsin_court.txt#3
+
+Tamsin Court — what it's actually like
+
+Laundry costs in-unit washer-dryer. On noise: quiet, structurally — concrete floors between units.
+```
+
+### Criterion 5 — answer contains the `expects` phrase
+
+Every answer on all three runs contained its `expects` phrase from
+`questions.py`. The wording around it varied; the phrase itself did not.
+The Aldridge question across all three runs:
+
+```
+run 1: A wash at Aldridge Hall costs $1.75.
+run 2: A wash costs $1.75 at Aldridge Hall (housing_aldridge_hall_laundry.txt and housing_aldridge_hall.txt).
+run 3: A wash at Aldridge Hall costs $1.75.
+```
 
 ## Verdicts
 
-<!-- MET or MISSED for each of the five, against the target you wrote last
-     unit — not a new one. Plus a sentence on how you decided. That sentence
-     matters most where it was close.
-
-     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
-     The target has to hold, not show up occasionally.
-
-     Milestone 2. -->
-
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | For every question, the file holding the answer was among the retrieved sources on all three runs. 5 of 5 against a target of 4 of 5. |
+| 2 | Every answer names a source | MET | I read all fifteen answers and each named at least one file. The format varied between inline parentheses, a `Source:` line and backticks, but the criterion asks that a source is named, not how. |
+| 3 | Gate stops out-of-corpus questions | MET | The gate refused all five OUT_OF_SCOPE questions, the closest at 0.787 against a cutoff of 0.6. 5 of 5 against a target of 4 of 5. |
+| 4 | Chunks cover one topic | MISSED | 17 of 20 against a target of 18 of 20, so it misses by one. I counted a chunk as failing when it holds two facts a student would ask about separately: the add and drop deadlines, the permit sale window and the unofficial Verrill Street parking, and Tamsin Court's laundry setup alongside its noise level. I counted `course_biol_160.txt#0` and `dining_halden_hall.txt#0` as passing even though both open with "I lived here my sophomore year", because that line is reused verbatim across unrelated posts as flavour text and carries no fact anyone would ask about, so it is noise inside a chunk rather than a second topic. In unit 1 I counted this same sample as 18 of 20 by treating the parking chunk as one topic. Re-reading it for this verdict, the permit sale window and the unofficial Verrill Street workaround are things a student would ask about separately, so I counted it as a failure here, which moves the count to 17 of 20. |
+| 5 | Answer contains the `expects` phrase | MET | I checked each of the fifteen answers for the literal phrase in `questions.py`. All fifteen contained it. 5 of 5 against a target of 4 of 5. |
 
 ## Diagnoses
 
