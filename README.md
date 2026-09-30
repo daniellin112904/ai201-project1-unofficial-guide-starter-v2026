@@ -476,17 +476,68 @@ question's source document had a paragraph over 260 characters.
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
+**Criterion 4 — chunks are at most two sentences (82.7%, target 90%)**
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
+This is the only criterion still missed. 35 of 202 chunks carry three or more
+sentences of body text, and my length threshold cannot reach them. The shortest
+is 143 characters including its title, barely half the 260 threshold, and the
+twelve shortest are almost all opening paragraphs from housing and course posts:
+"I lived here my sophomore year. Built 1968, renovated 2019. Rooms are doubles
+with a shared bathroom per floor." Three sentences, three separate facts, well
+under any threshold I could set without shredding the paragraphs that are
+already fine.
 
-     Milestone 5. -->
+What I would do instead is replace the length test with a sentence-count test:
+split any paragraph of three or more sentences rather than any paragraph over a
+certain length. That matches the diagnosis directly, because the problem was
+never paragraph length, it was how many separately-askable facts the author
+packed in. It carries a risk I would have to measure rather than assume: some of
+those sentences are pure flavour with no facts in them, so splitting on count
+alone would produce chunks that answer nothing.
+
+I stopped here because this unit allows one improvement, and changing the rule
+from length to sentence count is a second one, which is this unit's stretch
+option and would have needed declaring in the README before I started. Making
+both changes in the same unit would also have left me unable to say which one
+moved the number.
+
+**A side effect worth recording.** Splitting long paragraphs created chunks with
+no facts in them at all. `dining_the_atrium.txt#0` is now just "The Atrium /
+Transferred in last year, so take this with a grain of salt." My shortest chunk
+fell from 63 characters to 37. These pass the revised criterion, since they are
+one sentence, but they occupy a retrieval slot while answering nothing. Neither
+version of criterion 4 measures this, which is a gap in the criterion rather
+than in the system.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
+**Criterion 4** is the one I would write differently, and I already had to revise
+it mid-unit. I wrote it as "at least 18 of 20 chunks focus on one clear topic",
+which sounded checkable and was not: "one clear topic" depends entirely on how
+broadly a topic is defined, and I defined it differently on different days. Next
+time I would write the mechanical version from the start and keep the judgment
+call in the reason underneath rather than inside the criterion itself. I would
+also measure over every chunk rather than a sample, since the sample changed the
+moment the chunk count did.
 
-     Milestone 5. -->
+**Criteria 1 and 5** were set too safely. Both came out 5 of 5 on every run
+against targets of 4 of 5, and neither ever came close to failing. Criterion 1
+asks whether a retrieved chunk contains the answer, but each of my five questions
+has its answer sitting in a post whose whole subject is that thing, and I pull
+three chunks, so it was close to impossible to fail. I would tighten it to
+require the answer in the top result rather than anywhere in the retrieved set.
+Criterion 5 allowed one miss for wording variation, but the `expects` phrase
+survived all fifteen answers despite the surrounding text varying every time, so
+I would tighten it to 5 of 5.
+
+**Criterion 1's reason was also wrong**, which is worth recording separately from
+the target. I predicted the Aldridge wash question would be the hardest, because
+seven nearly identical laundry documents differ only in price. It turned out to
+be the best performer of the five, at a distance of 0.262, with both top results
+from Aldridge and the nearest wrong hall at 0.404. Prepending the document title
+to every chunk, which I did in unit 1 for exactly this reason, worked better than
+I expected it to.
+
+**Criteria 2 and 3** I would keep as they are. Both measure something real, both
+are mechanically checkable, and passing them comfortably is the correct outcome
+rather than a sign they were too easy.
